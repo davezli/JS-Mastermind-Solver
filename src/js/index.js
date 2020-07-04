@@ -53,7 +53,7 @@ function generateAllPossibleGuessesNoDups(numPegs, colors) {
     let retVal = [];
     for (let index = 0; index < colors.length; index++) {
         let firstColor = colors[index];
-        let remainingColors = colors.filter((element, otherIndex) => otherIndex != index);
+        let remainingColors = colors.filter((element, otherIndex) => otherIndex !== index);
         let suffixes = generateAllPossibleGuessesNoDups(numPegs - 1, remainingColors);
         suffixes.forEach((suffix) => {
             retVal.push([firstColor].concat(suffix));
@@ -72,7 +72,7 @@ function judgeGuess(answer, guess) {
     let unaccountedForAnswers = [];
     let unaccountedForGuesses = [];
     for (let i = 0; i < answer.length; ++i) {
-        if (answer[i] == guess[i]) {
+        if (answer[i] === guess[i]) {
             retVal.bothCorrect++;
         } else {
             unaccountedForAnswers.push(answer[i]);
@@ -81,11 +81,11 @@ function judgeGuess(answer, guess) {
     }
     unaccountedForAnswers.forEach((a) => {
         var guessIndex = unaccountedForGuesses.indexOf(a);
-        if (guessIndex != -1) {
+        if (guessIndex !== -1) {
             retVal.colorCorrect++;
             unaccountedForGuesses.splice(guessIndex, 1);
         }
-    })
+    });
     return retVal;
 }
 
@@ -102,7 +102,7 @@ function guessContradictsSomeEvidence(guess, evidences) {
          * see whether the judgment is the same.
          */
         let judgement = judgeGuess(guess, evidence.guess);
-        if ((judgement.bothCorrect != evidence.bothCorrect) || (judgement.colorCorrect != evidence.colorCorrect)) {
+        if ((judgement.bothCorrect !== evidence.bothCorrect) || (judgement.colorCorrect !== evidence.colorCorrect)) {
             //console.log("guess", guess, "contradicts evidence", evidence.guess);
             return true;
         }
@@ -128,8 +128,7 @@ function quickRemoveFromArray(index, array) {
         return array.pop();
     }
     var retVal = array[index];
-    var lastElement = array.pop();
-    array[index] = lastElement;
+    array[index] = array.pop();
     return retVal;
 }
 
@@ -162,21 +161,23 @@ function guessToString(guess) {
     if ((typeof guess) !== "object") {
         throw "Expected guess to be an array but it was a " + (typeof guess);
     }
+    console.log("Guess: " + guess );
     return guess.join(", ");
 }
 
 function updateUiWithAGuess() {
     $curGuessAlert.hide();
     $success.hide();
-    if ($playAreaCurGuess.find('input').length != 0) {
+    if ($playAreaCurGuess.find('input').length !== 0) {
         let bothCorrect = parseInt($playAreaCurGuess.find('.bothCorrect').val());
         let colorCorrect = parseInt($playAreaCurGuess.find('.colorCorrect').val());
-        if (bothCorrect + colorCorrect > globalGameState.numPegs) {
-            $curGuessAlert.text("The sum of Right-Color-and-Column and Right-color-wrong-column should be less than the number of pegs.");
+        let unknown = parseInt($playAreaCurGuess.find('.unknown').val());
+        if (bothCorrect + colorCorrect + unknown > globalGameState.numPegs) {
+            $curGuessAlert.text(`The sum of Correct, Incorrect and Unknown should be less than ${globalGameState.numPegs}.`);
             $curGuessAlert.show();
             return;
         }
-        if (bothCorrect == globalGameState.numPegs) {
+        if (bothCorrect === globalGameState.numPegs) {
             $curGuessAlert.hide();
             $success.show();
             return;
@@ -186,12 +187,14 @@ function updateUiWithAGuess() {
         let $guessToAdd = $(oldGuessTemplate({
             guess: guessToString(guess),
             bothCorrect: bothCorrect,
-            colorCorrect: colorCorrect
+            colorCorrect: colorCorrect,
+            unknown: unknown
         }));
         $guessToAdd.data('evidence', {
             guess: guess,
             bothCorrect: bothCorrect,
-            colorCorrect: colorCorrect
+            colorCorrect: colorCorrect,
+            unknown: unknown
         });
         $playAreaOldGuesses.append($guessToAdd);
     }
@@ -203,7 +206,7 @@ function updateUiWithAGuess() {
     var guess = generateNextGuess(globalGameState, evidence);
     if (guess == null) {
         $playAreaCurGuess.hide();
-        $curGuessAlert.html("Ran out of possible guesses. There might be a contradiction in the information you entered above. If you think this is a bug, please file a report at <a href='https://github.com/NebuPookins/JS-Mastermind-Solver/issues'>https://github.com/NebuPookins/JS-Mastermind-Solver/issues</a>. Otherwise, click 'Restart' to try a new game.");
+        $curGuessAlert.html("Ran out of possible guesses. There might be a contradiction in the information you entered above. Click 'Restart' to try a new game.");
         $curGuessAlert.show();
     } else {
         $playAreaCurGuess.html(newGuessTemplate({
@@ -230,8 +233,7 @@ $startBtn.on('click', () => {
     var parsedColors = $colorLabels.val()
         .split(/[ ,]+/)
         .map((color) => color.trim())
-        .filter((color) => color != "");
-    parsedColors
+        .filter((color) => color !== "");
     if (parsedColors.length < 1) {
         $inputAlert.text("Need at least one color.");
         $inputAlert.show();
