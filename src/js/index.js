@@ -141,7 +141,14 @@ function quickRemoveFromArray(index, array) {
  * efficiency reasons.
  */
 function generateNextGuess(gameState, evidence) {
-    let guessIndex = Math.floor(Math.random() * gameState.possibleGuesses.length);
+    let guessIndex;
+    if (gameState.firstGuess === true) {
+        // Start first guess with (Scroll Scroll Medal Medal) since party members will still be collecting food / wine
+        guessIndex = Math.min(5, gameState.possibleGuesses.length - 1);
+        gameState.firstGuess = false;
+    } else {
+        guessIndex = Math.floor(Math.random() * gameState.possibleGuesses.length);
+    }
     let guess = quickRemoveFromArray(guessIndex, gameState.possibleGuesses);
     while (guessContradictsSomeEvidence(guess, evidence)) {
         if (gameState.possibleGuesses.length < 1) {
@@ -161,7 +168,6 @@ function guessToString(guess) {
     if ((typeof guess) !== "object") {
         throw "Expected guess to be an array but it was a " + (typeof guess);
     }
-    console.log("Guess: " + guess );
     return guess.join(", ");
 }
 
@@ -254,7 +260,8 @@ $startBtn.on('click', () => {
         numPegs: numPegs,
         colors: parsedColors,
         allowDups: allowDups,
-        possibleGuesses: possibleGuesses
+        possibleGuesses: possibleGuesses,
+        firstGuess: true
     };
     console.log(globalGameState);
     $startBtn.text("Restart");
